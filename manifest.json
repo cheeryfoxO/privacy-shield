@@ -15,8 +15,19 @@
     "cookies",
     "webRequest",
     "storage",
-    "tabs"
+    "tabs",
+    "declarativeNetRequest"
   ],
+
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "easylist_rules",
+        "enabled": true,
+        "path": "lib/easylist-dnr-rules.json"
+      }
+    ]
+  },
 
   "host_permissions": [
     "<all_urls>"
@@ -35,6 +46,7 @@
         "content/detectors/third-party-domains.js",
         "content/detectors/canvas-fingerprinting.js",
         "content/detectors/webrtc-leak.js",
+        "content/detectors/ad-blocker.js",
         "content/utils/message-bridge.js",
         "content/content-script.js"
       ],

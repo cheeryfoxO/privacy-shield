@@ -11,7 +11,8 @@ importScripts(
   '../lib/known-trackers.js',
   '../lib/cookie-analyzer.js',
   '../lib/privacy-score.js',
-  '../lib/storage-manager.js'
+  '../lib/storage-manager.js',
+  '../lib/ad-rules-engine.js'
 );
 
 // ============================================================
@@ -78,6 +79,35 @@ async function handleMessage(message, sender, sendResponse) {
     case 'CLEAR_TAB_DATA':
       clearTabData(message.tabId);
       sendResponse({ received: true });
+      break;
+
+    // ---- 广告拦截消息 ----
+    case 'AD_BLOCKER_STATUS':
+      handleAdBlockerStatus(message.domain, sendResponse);
+      break;
+
+    case 'AD_BLOCKER_STATS':
+      handleAdBlockerStats(message.data, sendResponse);
+      break;
+
+    case 'AD_TOGGLE':
+      handleAdToggle(message.enabled, sendResponse);
+      break;
+
+    case 'AD_ADD_RULE':
+      handleAdAddRule(message.rule, sendResponse);
+      break;
+
+    case 'AD_REMOVE_RULE':
+      handleAdRemoveRule(message.ruleId, message.type, sendResponse);
+      break;
+
+    case 'AD_GET_RULES':
+      handleAdGetRules(sendResponse);
+      break;
+
+    case 'AD_WHITELIST':
+      handleAdWhitelist(message.action, message.domain, sendResponse);
       break;
 
     default:
@@ -274,3 +304,122 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// ============================================================
+// 广告拦截模块
+// ============================================================
+
+let adBlockStats = {
+  todayTotal: 0,
+  todayDate: new Date().toDateString(),
+  perDomain: {}
+};
+
+let cachedCssSelectors = null;
+let adBlockerEnabled = true;
+
+async function initAdBlocker() {
+  const result = await chrome.storage.sync.get(['adBlockerEnabled']);
+  adBlockerEnabled = result.adBlockerEnabled !== false;
+
+  await AdRulesEngine.init();
+
+  const statsResult = await chrome.storage.local.get(['adBlockStats']);
+  if (statsResult.adBlockStats) {
+    adBlockStats = statsResult.adBlockStats;
+    if (adBlockStats.todayDate !== new Date().toDateString()) {
+      adBlockStats.todayTotal = 0;
+      adBlockStats.todayDate = new Date().toDateString();
+    }
+  }
+  console.log('[广告拦截] 初始化完成, 状态:', adBlockerEnabled ? '开启' : '关闭');
+}
+
+async function loadCssSelectors() {
+  if (cachedCssSelectors) return cachedCssSelectors;
+
+  try {
+    const url = chrome.runtime.getURL('lib/easylist-css-selectors.json');
+    const response = await fetch(url);
+    cachedCssSelectors = await response.json();
+  } catch (e) {
+    try {
+      const url = chrome.runtime.getURL('lib/easylist-css-selectors-seed.json');
+      const response = await fetch(url);
+      cachedCssSelectors = await response.json();
+    } catch (e2) {
+      cachedCssSelectors = [];
+    }
+  }
+
+  const customRules = await AdRulesEngine.getCosmeticRules();
+  for (const rule of customRules) {
+    cachedCssSelectors.push({ selector: rule.selector, domains: [] });
+  }
+
+  return cachedCssSelectors;
+}
+
+async function handleAdBlockerStatus(domain, sendResponse) {
+  const whitelisted = await AdRulesEngine.isWhitelisted(domain);
+  const cssSelectors = whitelisted ? [] : await loadCssSelectors();
+  sendResponse({
+    enabled: adBlockerEnabled,
+    whitelisted: whitelisted,
+    cssSelectors: cssSelectors
+  });
+}
+
+async function handleAdBlockerStats(data, sendResponse) {
+  if (!adBlockStats.perDomain[data.domain]) {
+    adBlockStats.perDomain[data.domain] = { blocked: 0, hidden: 0 };
+  }
+  adBlockStats.perDomain[data.domain].hidden = data.hiddenElements;
+  adBlockStats.todayTotal++;
+  chrome.storage.local.set({ adBlockStats: adBlockStats }).catch(() => {});
+  sendResponse({ received: true });
+}
+
+async function handleAdToggle(enabled, sendResponse) {
+  adBlockerEnabled = enabled;
+  await chrome.storage.sync.set({ adBlockerEnabled: enabled });
+  sendResponse({ success: true });
+}
+
+async function handleAdAddRule(rule, sendResponse) {
+  const result = await AdRulesEngine.addRule(rule);
+  // 清除 CSS 缓存以重新加载自定义规则
+  cachedCssSelectors = null;
+  sendResponse(result);
+}
+
+async function handleAdRemoveRule(ruleId, type, sendResponse) {
+  const result = await AdRulesEngine.removeRule(ruleId, type);
+  cachedCssSelectors = null;
+  sendResponse(result);
+}
+
+async function handleAdGetRules(sendResponse) {
+  const rules = await AdRulesEngine.getDynamicRules();
+  const whitelist = await AdRulesEngine.getWhitelist();
+  const stats = {
+    enabled: adBlockerEnabled,
+    todayTotal: adBlockStats.todayTotal,
+    dnrRuleCount: rules.network.length,
+    cosmeticRuleCount: rules.cosmetic.length
+  };
+  sendResponse({ rules, whitelist, stats });
+}
+
+async function handleAdWhitelist(action, domain, sendResponse) {
+  if (action === 'add') {
+    const list = await AdRulesEngine.addToWhitelist(domain);
+    sendResponse({ success: true, whitelist: list });
+  } else if (action === 'remove') {
+    const list = await AdRulesEngine.removeFromWhitelist(domain);
+    sendResponse({ success: true, whitelist: list });
+  }
+}
+
+// 启动广告拦截
+initAdBlocker();
