@@ -1,0 +1,531 @@
+/* ============================================================
+   隐私护盾 - Popup 样式
+   支持暗色模式 (prefers-color-scheme: dark)
+   ============================================================ */
+
+/* CSS 变量（主题） */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-hover: #f1f5f9;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --color-green: #22c55e;
+  --color-green-bg: #f0fdf4;
+  --color-yellow: #eab308;
+  --color-yellow-bg: #fefce8;
+  --color-orange: #f97316;
+  --color-orange-bg: #fff7ed;
+  --color-red: #ef4444;
+  --color-red-bg: #fef2f2;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1e1e2e;
+    --bg-secondary: #252536;
+    --bg-hover: #2d2d44;
+    --border-color: #363650;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --color-green: #4ade80;
+    --color-green-bg: #052e16;
+    --color-yellow: #facc15;
+    --color-yellow-bg: #3b2f00;
+    --color-orange: #fb923c;
+    --color-orange-bg: #3b1500;
+    --color-red: #f87171;
+    --color-red-bg: #3b0000;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+  }
+}
+
+/* 基础重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 380px;
+  max-height: 520px;
+  overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  font-size: 13px;
+}
+
+/* 滚动条 */
+body::-webkit-scrollbar {
+  width: 4px;
+}
+body::-webkit-scrollbar-track {
+  background: transparent;
+}
+body::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 2px;
+}
+
+/* ============================================================
+   头部
+   ============================================================ */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.header-icon {
+  font-size: 22px;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 700;
+  flex: 1;
+}
+
+.header-version {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* ============================================================
+   分数仪表盘
+   ============================================================ */
+.score-section {
+  display: flex;
+  justify-content: center;
+  padding: 20px 16px 12px;
+}
+
+.score-ring-container {
+  width: 140px;
+  height: 140px;
+}
+
+.score-ring {
+  width: 100%;
+  height: 100%;
+}
+
+.score-ring-bg {
+  stroke: var(--bg-hover);
+}
+
+.score-ring-progress {
+  transition: stroke-dashoffset 0.8s ease, stroke 0.5s ease;
+}
+
+.score-number {
+  font-size: 36px;
+  font-weight: 800;
+  fill: var(--text-primary);
+  transition: fill 0.5s ease;
+}
+
+.score-label {
+  font-size: 12px;
+  fill: var(--text-secondary);
+}
+
+/* ============================================================
+   摘要
+   ============================================================ */
+.summary-section {
+  padding: 0 16px 12px;
+  text-align: center;
+}
+
+.summary-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ============================================================
+   手风琴详情
+   ============================================================ */
+.details-section {
+  padding: 0 12px 8px;
+}
+
+.accordion {
+  margin-bottom: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  overflow: hidden;
+  transition: background 0.15s ease;
+}
+
+.accordion[open] {
+  background: var(--bg-primary);
+}
+
+.accordion-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  transition: background 0.15s ease;
+}
+
+.accordion-header:hover {
+  background: var(--bg-hover);
+}
+
+.accordion-header::-webkit-details-marker {
+  display: none;
+}
+
+.accordion-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.accordion-title {
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.accordion-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.accordion-score {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 28px;
+  text-align: right;
+}
+
+.accordion-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  background: var(--color-green-bg);
+  color: var(--color-green);
+}
+
+.accordion-badge.warning {
+  background: var(--color-yellow-bg);
+  color: var(--color-yellow);
+}
+
+.accordion-badge.danger {
+  background: var(--color-red-bg);
+  color: var(--color-red);
+}
+
+/* 手风琴内容 */
+.accordion-body {
+  padding: 0 12px 10px;
+  border-top: 1px solid var(--border-color);
+  margin: 0 8px;
+}
+
+.empty-hint {
+  padding: 12px 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* 第三方域名条目 */
+.domain-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 12px;
+}
+
+.domain-item:last-child {
+  border-bottom: none;
+}
+
+.domain-name {
+  flex: 1;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.domain-types {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.domain-type-tag {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.tracker-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--color-red-bg);
+  color: var(--color-red);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Cookie 条目 */
+.cookie-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 11px;
+}
+
+.cookie-item:last-child {
+  border-bottom: none;
+}
+
+.cookie-name {
+  flex: 1;
+  font-weight: 600;
+  word-break: break-all;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.cookie-meta {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.cookie-tag {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.cookie-tag.tracking {
+  background: var(--color-red-bg);
+  color: var(--color-red);
+}
+
+.cookie-tag.third-party {
+  background: var(--color-orange-bg);
+  color: var(--color-orange);
+}
+
+.cookie-tag.persistent {
+  background: var(--color-yellow-bg);
+  color: var(--color-yellow);
+}
+
+.cookie-tag.session {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+/* Canvas 事件条目 */
+.canvas-event-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 11px;
+}
+
+.canvas-event-item:last-child {
+  border-bottom: none;
+}
+
+.canvas-event-method {
+  font-weight: 600;
+  font-family: monospace;
+  color: var(--color-orange);
+}
+
+.canvas-event-details {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.canvas-event-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.canvas-event-tag.risk {
+  background: var(--color-red-bg);
+  color: var(--color-red);
+}
+
+/* WebRTC 事件条目 */
+.webrtc-event-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 11px;
+}
+
+.webrtc-event-item:last-child {
+  border-bottom: none;
+}
+
+.webrtc-ip {
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--color-red);
+}
+
+.webrtc-event-details {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.webrtc-event-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.webrtc-event-tag.risk {
+  background: var(--color-red-bg);
+  color: var(--color-red);
+}
+
+/* ============================================================
+   底部
+   ============================================================ */
+.footer {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.btn:hover {
+  background: var(--bg-hover);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border-color: var(--text-primary);
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+/* ============================================================
+   加载/错误遮罩
+   ============================================================ */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.overlay-content {
+  text-align: center;
+}
+
+.overlay-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--bg-hover);
+  border-top-color: var(--text-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+.overlay-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   动画
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.accordion-body {
+  animation: fadeIn 0.15s ease;
+}

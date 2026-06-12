@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>隐私政策 — 隐私护盾</title>
+  <style>
+    :root {
+      --bg: #ffffff; --text: #1a1a2e; --text-secondary: #4a5568;
+      --accent: #22c55e; --border: #e2e8f0; --code-bg: #f7fafc;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a2e; --text: #e2e8f0; --text-secondary: #a0aec0;
+        --border: #2d3748; --code-bg: #2d3748;
+      }
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Microsoft YaHei", sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.8;
+      max-width: 800px; margin: 0 auto; padding: 40px 20px;
+    }
+    h1 { font-size: 1.8em; margin-bottom: 8px; }
+    h2 { font-size: 1.3em; margin: 32px 0 12px; padding-bottom: 8px;
+      border-bottom: 2px solid var(--accent); }
+    h3 { font-size: 1.1em; margin: 20px 0 8px; }
+    p { margin: 8px 0; color: var(--text-secondary); }
+    ul { margin: 8px 0 8px 20px; }
+    li { color: var(--text-secondary); margin: 4px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    th, td { border: 1px solid var(--border); padding: 8px 12px;
+      text-align: left; font-size: 0.9em; }
+    th { background: var(--code-bg); font-weight: 600; }
+    td { color: var(--text-secondary); }
+    .updated { color: var(--text-secondary); font-size: 0.85em;
+      margin-top: 4px; }
+    .lang-section { margin: 40px 0; padding: 20px;
+      background: var(--code-bg); border-radius: 8px; }
+    footer { margin-top: 48px; padding-top: 16px;
+      border-top: 1px solid var(--border); text-align: center;
+      font-size: 0.85em; color: var(--text-secondary); }
+  </style>
+</head>
+<body>
+
+<h1>🛡️ 隐私政策 — 隐私护盾</h1>
+<p class="updated">最后更新：2026 年 6 月 12 日</p>
+
+<h2>概述</h2>
+<p>隐私护盾是一款浏览器扩展，用于帮助用户了解当前网页的隐私状况。本隐私政策说明我们如何（以及不）收集、使用和处理数据。</p>
+<p><strong>核心承诺：所有数据处理均在用户本地浏览器中进行，不会向任何服务器发送任何数据。</strong></p>
+
+<h2>我们<strong>不会</strong>收集的数据</h2>
+<ul>
+  <li>❌ 个人信息（姓名、邮箱、地址等）</li>
+  <li>❌ 浏览历史记录</li>
+  <li>❌ Cookie 的值或内容</li>
+  <li>❌ 表单输入或密码</li>
+  <li>❌ 网页正文内容</li>
+  <li>❌ 用户 IP 地址</li>
+  <li>❌ 设备标识符或指纹</li>
+</ul>
+
+<h2>本地处理的数据</h2>
+<p>以下数据<strong>仅在用户设备本地处理，绝不离开浏览器</strong>：</p>
+<ul>
+  <li>当前页面 URL（仅用于提取域名，不存储或传输）</li>
+  <li>页面加载的第三方资源域名</li>
+  <li>Cookie 元数据（名称、域名、类型 — <strong>不读取 Cookie 值</strong>）</li>
+  <li>Canvas API 调用记录（方法名、画布尺寸）</li>
+  <li>WebRTC ICE Candidates（IP 地址 — <strong>不存储或传输</strong>）</li>
+</ul>
+
+<h2>存储机制</h2>
+<ul>
+  <li>用户设置通过 <code>chrome.storage.sync</code> 在登录设备间同步</li>
+  <li>扫描报告暂存于 <code>chrome.storage.local</code>，关闭标签页时自动清除</li>
+  <li><strong>无数据被发送到远程服务器</strong></li>
+</ul>
+
+<h2>权限使用说明</h2>
+<table>
+  <tr><th>权限</th><th>用途</th></tr>
+  <tr><td><code>cookies</code></td><td>读取并分析 Cookie 的域名、类型、过期时间，<strong>不读取值</strong></td></tr>
+  <tr><td><code>webRequest</code></td><td>观察网络请求以识别第三方域名，<strong>不拦截或修改请求</strong></td></tr>
+  <tr><td><code>storage</code></td><td>本地保存用户设置和临时扫描结果</td></tr>
+  <tr><td><code>tabs</code></td><td>获取当前标签页 URL 以关联扫描结果</td></tr>
+  <tr><td><code>&lt;all_urls&gt;</code></td><td>在用户访问的网页中注入隐私检测脚本</td></tr>
+</table>
+
+<h2>第三方服务</h2>
+<p>本扩展<strong>不集成</strong>任何第三方分析、广告、遥测或追踪服务。</p>
+
+<h2>数据安全</h2>
+<p>由于所有数据均在本地处理，不存在数据泄露风险。扩展代码完全开源，欢迎审查。</p>
+
+<!-- ===== English ===== -->
+<div class="lang-section">
+<h2>🇬🇧 Privacy Policy — English</h2>
+<p class="updated">Last Updated: June 12, 2026</p>
+
+<h3>Overview</h3>
+<p>Privacy Shield is a browser extension that helps users understand the privacy status of web pages they visit. <strong>All data processing happens exclusively on the user's device. No data is ever transmitted to any server.</strong></p>
+
+<h3>Data We Do NOT Collect</h3>
+<ul>
+  <li>❌ No personal information (name, email, address, etc.)</li>
+  <li>❌ No browsing history</li>
+  <li>❌ No cookie values</li>
+  <li>❌ No form data or passwords</li>
+  <li>❌ No page content</li>
+  <li>❌ No IP addresses</li>
+  <li>❌ No device identifiers or fingerprints</li>
+</ul>
+
+<h3>Local Processing Only</h3>
+<p>All data is processed locally in the browser. No data leaves the user's device.</p>
+
+<h3>Permission Usage</h3>
+<table>
+  <tr><th>Permission</th><th>Purpose</th></tr>
+  <tr><td><code>cookies</code></td><td>Analyze cookie metadata (domain, type, expiry). Values are NEVER read.</td></tr>
+  <tr><td><code>webRequest</code></td><td>Observe network requests to identify third-party domains. Requests are NEVER intercepted or modified.</td></tr>
+  <tr><td><code>storage</code></td><td>Save user preferences and temporary scan results locally.</td></tr>
+  <tr><td><code>tabs</code></td><td>Associate scan results with the current tab.</td></tr>
+  <tr><td><code>&lt;all_urls&gt;</code></td><td>Inject detection scripts into pages the user visits.</td></tr>
+</table>
+
+<h3>Third-Party Services</h3>
+<p>This extension integrates NO third-party analytics, advertising, telemetry, or tracking services.</p>
+
+<h3>Data Security</h3>
+<p>Since all data is processed locally, there is no risk of data breach. The source code is fully open and available for review.</p>
+</div>
+
+<footer>
+  <p>隐私护盾 (Privacy Shield) &copy; 2026 | 如对本隐私政策有疑问，请联系开发者</p>
+</footer>
+
+</body>
+</html>

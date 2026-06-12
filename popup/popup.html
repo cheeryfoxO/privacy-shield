@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>隐私护盾</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <!-- 头部 -->
+  <header class="header">
+    <div class="header-icon">🛡️</div>
+    <h1 class="header-title">隐私护盾</h1>
+    <span class="header-version">v1.0</span>
+  </header>
+
+  <!-- 分数仪表盘 -->
+  <section class="score-section" id="scoreSection">
+    <div class="score-ring-container">
+      <svg class="score-ring" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
+        <circle class="score-ring-bg" cx="70" cy="70" r="60"
+          fill="none" stroke="currentColor" stroke-width="10" />
+        <circle class="score-ring-progress" id="scoreRingProgress"
+          cx="70" cy="70" r="60" fill="none" stroke="currentColor"
+          stroke-width="10" stroke-linecap="round"
+          stroke-dasharray="0 377" transform="rotate(-90 70 70)" />
+        <text class="score-number" id="scoreNumber" x="70" y="65"
+          text-anchor="middle" dominant-baseline="central">--</text>
+        <text class="score-label" id="scoreLabel" x="70" y="95"
+          text-anchor="middle" dominant-baseline="central">扫描中</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- 摘要 -->
+  <section class="summary-section" id="summarySection">
+    <div class="summary-text" id="summaryText">正在扫描页面隐私信息...</div>
+  </section>
+
+  <!-- 分类详情（手风琴） -->
+  <section class="details-section" id="detailsSection">
+    <!-- 第三方域名 -->
+    <details class="accordion" id="accordionDomains">
+      <summary class="accordion-header">
+        <span class="accordion-icon">🌐</span>
+        <span class="accordion-title">第三方域名</span>
+        <span class="accordion-count" id="domainCount">0</span>
+        <span class="accordion-score" id="domainScore">▸ 0</span>
+      </summary>
+      <div class="accordion-body" id="domainList">
+        <p class="empty-hint">未检测到第三方域名</p>
+      </div>
+    </details>
+
+    <!-- Cookie -->
+    <details class="accordion" id="accordionCookies">
+      <summary class="accordion-header">
+        <span class="accordion-icon">🍪</span>
+        <span class="accordion-title">Cookie</span>
+        <span class="accordion-count" id="cookieCount">0</span>
+        <span class="accordion-score" id="cookieScore">▸ 0</span>
+      </summary>
+      <div class="accordion-body" id="cookieList">
+        <p class="empty-hint">未检测到 Cookie</p>
+      </div>
+    </details>
+
+    <!-- Canvas 指纹 -->
+    <details class="accordion" id="accordionCanvas">
+      <summary class="accordion-header">
+        <span class="accordion-icon">🎨</span>
+        <span class="accordion-title">Canvas 指纹</span>
+        <span class="accordion-badge" id="canvasStatus">安全</span>
+        <span class="accordion-score" id="canvasScore">▸ 0</span>
+      </summary>
+      <div class="accordion-body" id="canvasList">
+        <p class="empty-hint">未检测到 Canvas 指纹行为</p>
+      </div>
+    </details>
+
+    <!-- WebRTC 泄漏 -->
+    <details class="accordion" id="accordionWebRTC">
+      <summary class="accordion-header">
+        <span class="accordion-icon">📡</span>
+        <span class="accordion-title">WebRTC 泄漏</span>
+        <span class="accordion-badge" id="webrtcStatus">安全</span>
+        <span class="accordion-score" id="webrtcScore">▸ 0</span>
+      </summary>
+      <div class="accordion-body" id="webrtcList">
+        <p class="empty-hint">未检测到 WebRTC 泄漏</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- 底部操作栏 -->
+  <footer class="footer">
+    <button class="btn btn-secondary" id="btnSettings" title="设置">
+      ⚙️ 设置
+    </button>
+    <button class="btn btn-primary" id="btnRescan" title="重新扫描">
+      🔄 重新扫描
+    </button>
+  </footer>
+
+  <!-- 加载/错误遮罩 -->
+  <div class="overlay" id="overlay" style="display: none;">
+    <div class="overlay-content">
+      <div class="overlay-spinner" id="overlaySpinner"></div>
+      <p class="overlay-text" id="overlayText"></p>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

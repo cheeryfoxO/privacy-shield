@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>隐私护盾 - 设置</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>🛡️ 隐私护盾 · 设置</h1>
+      <p class="subtitle">调整检测选项和评分权重</p>
+    </header>
+
+    <form id="optionsForm">
+      <!-- 检测器开关 -->
+      <section class="card">
+        <h2>检测器开关</h2>
+        <p class="card-desc">启用或禁用各项隐私检测功能</p>
+
+        <label class="toggle-row">
+          <span class="toggle-label">
+            <span class="toggle-icon">🌐</span>
+            <span>第三方域名检测</span>
+            <small>扫描页面加载的所有第三方资源</small>
+          </span>
+          <input type="checkbox" name="enableThirdPartyDetection" checked>
+          <span class="toggle-switch"></span>
+        </label>
+
+        <label class="toggle-row">
+          <span class="toggle-label">
+            <span class="toggle-icon">🍪</span>
+            <span>Cookie 检查</span>
+            <small>识别第一方/第三方 Cookie 及追踪 Cookie</small>
+          </span>
+          <input type="checkbox" name="enableCookieInspection" checked>
+          <span class="toggle-switch"></span>
+        </label>
+
+        <label class="toggle-row">
+          <span class="toggle-label">
+            <span class="toggle-icon">🎨</span>
+            <span>Canvas 指纹检测</span>
+            <small>检测 Canvas API 调用中的指纹行为</small>
+          </span>
+          <input type="checkbox" name="enableCanvasDetection" checked>
+          <span class="toggle-switch"></span>
+        </label>
+
+        <label class="toggle-row">
+          <span class="toggle-label">
+            <span class="toggle-icon">📡</span>
+            <span>WebRTC 泄漏检测</span>
+            <small>拦截 ICE candidates 检测 IP 泄漏</small>
+          </span>
+          <input type="checkbox" name="enableWebRtcDetection" checked>
+          <span class="toggle-switch"></span>
+        </label>
+      </section>
+
+      <!-- 评分权重 -->
+      <section class="card">
+        <h2>评分权重</h2>
+        <p class="card-desc">调整各维度在隐私评分中的权重（总和 100）</p>
+
+        <div class="weight-row">
+          <label class="weight-label">
+            <span>🌐 第三方域名</span>
+          </label>
+          <div class="weight-input-group">
+            <input type="range" name="weightThirdPartyDomains" min="0" max="60" value="35" class="weight-slider">
+            <input type="number" name="weightThirdPartyDomainsNum" min="0" max="60" value="35" class="weight-number">
+            <span class="weight-unit">分</span>
+          </div>
+        </div>
+
+        <div class="weight-row">
+          <label class="weight-label">
+            <span>🍪 Cookie</span>
+          </label>
+          <div class="weight-input-group">
+            <input type="range" name="weightCookies" min="0" max="60" value="30" class="weight-slider">
+            <input type="number" name="weightCookiesNum" min="0" max="60" value="30" class="weight-number">
+            <span class="weight-unit">分</span>
+          </div>
+        </div>
+
+        <div class="weight-row">
+          <label class="weight-label">
+            <span>🎨 Canvas 指纹</span>
+          </label>
+          <div class="weight-input-group">
+            <input type="range" name="weightCanvasFingerprinting" min="0" max="60" value="25" class="weight-slider">
+            <input type="number" name="weightCanvasFingerprintingNum" min="0" max="60" value="25" class="weight-number">
+            <span class="weight-unit">分</span>
+          </div>
+        </div>
+
+        <div class="weight-row">
+          <label class="weight-label">
+            <span>📡 WebRTC 泄漏</span>
+          </label>
+          <div class="weight-input-group">
+            <input type="range" name="weightWebrtcLeaks" min="0" max="60" value="10" class="weight-slider">
+            <input type="number" name="weightWebrtcLeaksNum" min="0" max="60" value="10" class="weight-number">
+            <span class="weight-unit">分</span>
+          </div>
+        </div>
+
+        <div class="weight-total">
+          总计: <strong id="weightTotal">100</strong> / 100
+          <span class="weight-warning" id="weightWarning" style="display:none;">⚠️ 权重总和必须为 100</span>
+        </div>
+      </section>
+
+      <!-- 高级设置 -->
+      <section class="card">
+        <h2>高级设置</h2>
+
+        <label class="field-row">
+          <span class="field-label">域名白名单</span>
+          <input type="text" name="whitelistedDomains" value="localhost, 127.0.0.1, ::1"
+            placeholder="用逗号分隔多个域名" class="text-input">
+          <span class="field-hint">白名单内的域名不会触发第三方域名警告</span>
+        </label>
+      </section>
+
+      <!-- 操作按钮 -->
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">💾 保存设置</button>
+        <button type="button" id="btnReset" class="btn btn-secondary">↩️ 恢复默认</button>
+      </div>
+
+      <!-- 保存提示 -->
+      <div class="toast" id="toast" style="display:none;">✅ 设置已保存</div>
+    </form>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
