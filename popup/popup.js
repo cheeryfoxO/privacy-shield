@@ -33,6 +33,12 @@ async function init() {
 
   // 加载并显示报告
   await loadReport(tab.id);
+
+  // 初始化 Tab 切换
+  initTabs();
+
+  // 初始化广告拦截面板
+  await initAdBlockPanel(tab.id);
 }
 
 // ============================================================
@@ -501,6 +507,115 @@ function openSettings() {
   } else {
     window.open(chrome.runtime.getURL('options/options.html'));
   }
+}
+
+// ============================================================
+// Tab 切换
+// ============================================================
+function initTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+    });
+  });
+}
+
+// ============================================================
+// 广告拦截面板
+// ============================================================
+let adWhitelistState = false;
+
+async function initAdBlockPanel(tabId) {
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    const domain = new URL(tab.url).hostname;
+
+    const response = await chrome.runtime.sendMessage({ type: 'AD_GET_RULES' });
+    if (!response) return;
+
+    const { rules, whitelist, stats } = response;
+
+    document.getElementById('adBlockedToday').textContent = stats.todayTotal;
+    document.getElementById('adDNRCount').textContent = stats.dnrRuleCount;
+
+    const toggle = document.getElementById('adToggle');
+    toggle.checked = stats.enabled;
+
+    // 当前页面拦截数（暂时显示 0，等 content script 上报后更新）
+    document.getElementById('adBlockedPage').textContent = '...';
+
+    renderAdRules(rules);
+    adWhitelistState = whitelist.some(d => domain === d || domain.endsWith('.' + d));
+    updateWhitelistBtn();
+    bindAdEvents(domain);
+  } catch (e) {
+    console.error('[广告拦截] 面板初始化失败:', e);
+  }
+}
+
+function renderAdRules(rules) {
+  const container = document.getElementById('adRuleList');
+  const count = document.getElementById('adRuleCount');
+  const allRules = [
+    ...rules.network.map(r => ({ id: r.id, type: 'network', text: r.condition.urlFilter || r.condition.regexFilter || '(规则)' })),
+    ...rules.cosmetic.map(r => ({ id: r.id, type: 'cosmetic', text: `##${r.selector}` }))
+  ];
+
+  count.textContent = allRules.length;
+  if (allRules.length === 0) {
+    container.innerHTML = '<p class="empty-hint">暂无自定义规则</p>';
+    return;
+  }
+  container.innerHTML = allRules.map(r => `
+    <div class="ad-rule-item">
+      <span class="ad-rule-text">${escapeHtml(r.text)}</span>
+      <button class="ad-rule-delete" data-id="${r.id}" data-type="${r.type}">删除</button>
+    </div>
+  `).join('');
+}
+
+function bindAdEvents(domain) {
+  document.getElementById('adToggle').addEventListener('change', async (e) => {
+    await chrome.runtime.sendMessage({ type: 'AD_TOGGLE', enabled: e.target.checked });
+  });
+
+  document.getElementById('adRuleAdd').addEventListener('click', async () => {
+    const input = document.getElementById('adRuleInput');
+    const rule = input.value.trim();
+    if (!rule) return;
+    const result = await chrome.runtime.sendMessage({ type: 'AD_ADD_RULE', rule });
+    if (result.success) {
+      input.value = '';
+      const resp = await chrome.runtime.sendMessage({ type: 'AD_GET_RULES' });
+      renderAdRules(resp.rules);
+    } else {
+      alert('添加失败: ' + result.error);
+    }
+  });
+
+  document.getElementById('adRuleList').addEventListener('click', async (e) => {
+    if (!e.target.classList.contains('ad-rule-delete')) return;
+    const id = parseInt(e.target.dataset.id);
+    const type = e.target.dataset.type;
+    await chrome.runtime.sendMessage({ type: 'AD_REMOVE_RULE', ruleId: id, type });
+    const resp = await chrome.runtime.sendMessage({ type: 'AD_GET_RULES' });
+    renderAdRules(resp.rules);
+  });
+
+  document.getElementById('adWhitelistBtn').addEventListener('click', async () => {
+    const action = adWhitelistState ? 'remove' : 'add';
+    await chrome.runtime.sendMessage({ type: 'AD_WHITELIST', action, domain });
+    adWhitelistState = !adWhitelistState;
+    updateWhitelistBtn();
+  });
+}
+
+function updateWhitelistBtn() {
+  const btn = document.getElementById('adWhitelistBtn');
+  btn.textContent = adWhitelistState ? '✅ 已放行本网站（点击取消）' : '⬜ 对本网站放行';
 }
 
 // ============================================================

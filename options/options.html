@@ -127,6 +127,29 @@
         </label>
       </section>
 
+      <!-- 广告拦截设置 -->
+      <section class="card">
+        <h2>🛑 广告拦截</h2>
+        <p class="card-desc">管理广告过滤规则和站点白名单</p>
+
+        <label class="toggle-row">
+          <span class="toggle-label">
+            <span>启用广告拦截</span>
+            <small>基于 EasyList China + EasyPrivacy 规则拦截广告</small>
+          </span>
+          <input type="checkbox" name="adBlockerEnabled" checked>
+          <span class="toggle-switch"></span>
+        </label>
+
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
+          <label class="field-label" style="margin-bottom:6px;">站点白名单（每行一个域名）</label>
+          <textarea name="adWhitelist" rows="4" class="text-input"
+            style="width:100%;resize:vertical;font-family:monospace;font-size:12px;"
+            placeholder="example.com&#10;mysite.org"></textarea>
+          <span class="field-hint">白名单中的网站不会进行广告拦截</span>
+        </div>
+      </section>
+
       <!-- 操作按钮 -->
       <div class="actions">
         <button type="submit" class="btn btn-primary">💾 保存设置</button>

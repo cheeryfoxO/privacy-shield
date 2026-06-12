@@ -20,7 +20,9 @@ const DEFAULTS = {
     webrtcLeaks: 10
   },
   whitelistedDomains: ['localhost', '127.0.0.1', '::1'],
-  notifyOnHighRisk: false
+  notifyOnHighRisk: false,
+  adBlockerEnabled: true,
+  adWhitelist: []
 };
 
 // ============================================================
@@ -99,6 +101,10 @@ function applyOptionsToForm(options) {
 
   // 白名单
   form.elements.whitelistedDomains.value = (options.whitelistedDomains || []).join(', ');
+
+  // 广告拦截
+  form.elements.adBlockerEnabled.checked = options.adBlockerEnabled !== false;
+  form.elements.adWhitelist.value = (options.adWhitelist || []).join('\n');
 }
 
 // ============================================================
@@ -133,7 +139,12 @@ async function saveOptions(event) {
       .split(',')
       .map(s => s.trim())
       .filter(Boolean),
-    notifyOnHighRisk: false
+    notifyOnHighRisk: false,
+    adBlockerEnabled: form.elements.adBlockerEnabled.checked,
+    adWhitelist: (form.elements.adWhitelist.value || '')
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean)
   };
 
   await saveToStorage(options);

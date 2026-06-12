@@ -46,5 +46,14 @@
   "resourceCss": { "message": "样式" },
   "resourceMedia": { "message": "媒体" },
   "resourceLink": { "message": "链接" },
-  "resourceOther": { "message": "其他" }
+  "resourceOther": { "message": "其他" },
+  "tabPrivacy": { "message": "隐私评分" },
+  "tabAdBlock": { "message": "广告拦截" },
+  "adBlockToday": { "message": "今日拦截" },
+  "adBlockCurrentPage": { "message": "当前页面" },
+  "adBlockNetworkRules": { "message": "网络规则" },
+  "adBlockAddRule": { "message": "添加自定义规则" },
+  "adBlockCustomRules": { "message": "自定义规则" },
+  "adBlockWhitelist": { "message": "对本网站放行" },
+  "adBlockWhitelisted": { "message": "已放行本网站" }
 }
