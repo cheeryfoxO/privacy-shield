@@ -39,6 +39,12 @@ async function init() {
 
   // 初始化广告拦截面板
   await initAdBlockPanel(tab.id);
+
+  // 初始化趋势面板
+  await renderHistoryTab();
+
+  // 初始化指纹面板
+  await renderFingerprintTab();
 }
 
 // ============================================================
@@ -626,4 +632,199 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+// ============================================================
+// 趋势面板
+// ============================================================
+
+async function renderHistoryTab() {
+  try {
+    const { history = [], trackerFrequency = {} } =
+      await chrome.storage.local.get(['history', 'trackerFrequency']);
+
+    renderTrendStats(history, trackerFrequency);
+    renderTrendChart(history);
+    renderTrendRanking(trackerFrequency);
+  } catch (e) {
+    console.error('[趋势面板] 渲染失败:', e);
+    document.getElementById('trendAvgScore').textContent = '--';
+    document.getElementById('trendSiteCount').textContent = '--';
+    document.getElementById('trendTrackerTotal').textContent = '--';
+  }
+}
+
+function renderTrendStats(history, trackerFrequency) {
+  if (history.length > 0) {
+    const avgScore = Math.round(history.reduce((s, h) => s + h.score, 0) / history.length);
+    const avgEl = document.getElementById('trendAvgScore');
+    avgEl.textContent = avgScore;
+    if (avgScore < 50) avgEl.classList.add('low');
+    else avgEl.classList.remove('low');
+  }
+  const siteCount = new Set(history.map(h => h.domain)).size;
+  document.getElementById('trendSiteCount').textContent = siteCount;
+  const totalTrackers = Object.values(trackerFrequency).reduce((s, t) => s + t.count, 0);
+  document.getElementById('trendTrackerTotal').textContent = totalTrackers;
+}
+
+function renderTrendChart(history) {
+  const svg = document.getElementById('trendChartSvg');
+  if (!svg) return;
+
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push({
+      dateStr: d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
+      isoDate: d.toLocaleDateString('zh-CN')
+    });
+  }
+
+  const dailyScores = new Map();
+  for (const h of history) {
+    const dateStr = new Date(h.timestamp).toLocaleDateString('zh-CN');
+    if (!dailyScores.has(dateStr)) {
+      dailyScores.set(dateStr, { total: 0, count: 0 });
+    }
+    const entry = dailyScores.get(dateStr);
+    entry.total += h.score;
+    entry.count++;
+  }
+
+  const points = days.map(d => {
+    const entry = dailyScores.get(d.isoDate);
+    if (entry && entry.count > 0) {
+      return { ...d, hasData: true, avgScore: Math.round(entry.total / entry.count), count: entry.count };
+    }
+    return { ...d, hasData: false, avgScore: null, count: 0 };
+  });
+
+  const padLeft = 32, padRight = 16, padTop = 10, padBottom = 24;
+  const width = 300, height = 160;
+  const plotLeft = padLeft, plotRight = width - padRight;
+  const plotTop = padTop, plotBottom = height - padBottom;
+
+  let html = '<defs><linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3b82f6" stop-opacity="0.25"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/></linearGradient></defs>';
+
+  const yValues = [0, 25, 50, 75, 100];
+  for (const yVal of yValues) {
+    const y = plotBottom - (yVal / 100) * (plotBottom - plotTop);
+    html += `<line class="grid-line" x1="${plotLeft}" y1="${y}" x2="${plotRight}" y2="${y}"/>`;
+    html += `<text class="y-label" x="${plotLeft - 4}" y="${y + 3}" text-anchor="end">${yVal}</text>`;
+  }
+
+  const xGap = (plotRight - plotLeft) / 6;
+  for (let i = 0; i < points.length; i++) {
+    const x = plotLeft + i * xGap;
+    const cls = points[i].hasData ? 'x-label' : 'x-label empty';
+    html += `<text class="${cls}" x="${x}" y="${height - 4}">${points[i].dateStr}</text>`;
+  }
+
+  const dataPoints = [];
+  for (let i = 0; i < points.length; i++) {
+    if (points[i].hasData) {
+      const x = plotLeft + i * xGap;
+      const y = plotBottom - (points[i].avgScore / 100) * (plotBottom - plotTop);
+      dataPoints.push({ x, y, ...points[i] });
+    }
+  }
+
+  if (dataPoints.length >= 1) {
+    let fillPath = `M ${dataPoints[0].x} ${plotBottom}`;
+    for (const pt of dataPoints) {
+      fillPath += ` L ${pt.x} ${pt.y}`;
+    }
+    fillPath += ` L ${dataPoints[dataPoints.length - 1].x} ${plotBottom} Z`;
+    html += `<path class="trend-fill" d="${fillPath}"/>`;
+    html += `<polyline class="trend-line" points="${dataPoints.map(pt => `${pt.x},${pt.y}`).join(' ')}"/>`;
+  }
+
+  for (const pt of dataPoints) {
+    html += `<circle class="trend-dot" cx="${pt.x}" cy="${pt.y}" r="3.5"><title>${pt.dateStr} · ${pt.count}个站点 · 均分${pt.avgScore}</title></circle>`;
+  }
+
+  svg.innerHTML = html;
+}
+
+function renderTrendRanking(trackerFrequency) {
+  const listEl = document.getElementById('trendRankingList');
+  if (!listEl) return;
+
+  const entries = Object.entries(trackerFrequency)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 8);
+
+  if (entries.length === 0) {
+    listEl.innerHTML = '<p class="empty-hint">暂无追踪器数据</p>';
+    return;
+  }
+
+  listEl.innerHTML = entries.map(([domain, info], i) => `
+    <div class="trend-ranking-item">
+      <span class="trend-ranking-rank">${i + 1}.</span>
+      <span class="trend-ranking-domain">${escapeHtml(domain)}</span>
+      <span class="trend-ranking-cat">${escapeHtml(info.category || '追踪')}</span>
+      <span class="trend-ranking-count">${info.count}次</span>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// 指纹面板
+// ============================================================
+
+async function renderFingerprintTab() {
+  try {
+    const results = await FingerprintCollector.collectAll();
+    const totalEntropy = FingerprintCollector.calculateTotalEntropy(results);
+    const entropyLevel = FingerprintCollector.getEntropyLevel(totalEntropy);
+
+    renderFingerprintEntropy(totalEntropy, entropyLevel);
+    renderFingerprintItems(results);
+  } catch (e) {
+    console.error('[指纹面板] 渲染失败:', e);
+    document.getElementById('fpEntropyValue').textContent = '-- bits';
+    document.getElementById('fpEntropyDesc').textContent = '采集失败，请重新打开 popup';
+  }
+}
+
+function renderFingerprintEntropy(totalBits, entropyLevel) {
+  const valueEl = document.getElementById('fpEntropyValue');
+  const barEl = document.getElementById('fpEntropyBar');
+  const descEl = document.getElementById('fpEntropyDesc');
+
+  if (valueEl) valueEl.textContent = totalBits.toFixed(1) + ' bits';
+  if (barEl) {
+    const pct = Math.min(100, (totalBits / 68) * 100);
+    barEl.style.width = pct + '%';
+    barEl.style.background = entropyLevel.color;
+  }
+  const levelEmoji = entropyLevel.level === 'low' ? '🟢' : entropyLevel.level === 'medium' ? '🟡' : '🔴';
+  if (descEl) descEl.textContent = levelEmoji + ' ' + entropyLevel.label;
+}
+
+function renderFingerprintItems(results) {
+  const container = document.getElementById('fpDetailsSection');
+  if (!container) return;
+
+  container.innerHTML = results.map(item => `
+    <details class="fp-accordion">
+      <summary class="fp-accordion-header">
+        <span class="fp-level-dot ${item.level}"></span>
+        <span class="fp-item-icon">${item.icon}</span>
+        <span class="fp-item-name">${escapeHtml(item.name)}</span>
+        <span class="fp-item-value">${escapeHtml(item.value)}</span>
+      </summary>
+      <div class="fp-accordion-body">
+        ${(item.detail || []).map(d => `
+          <div class="fp-detail-row">
+            <span class="fp-detail-label">${escapeHtml(d.label)}:</span>
+            <span class="fp-detail-value">${escapeHtml(d.value)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </details>
+  `).join('');
 }
