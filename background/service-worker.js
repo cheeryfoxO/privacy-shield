@@ -110,6 +110,10 @@ async function handleMessage(message, sender, sendResponse) {
       handleAdWhitelist(message.action, message.domain, sendResponse);
       break;
 
+    case 'CLEAN_LINK_STATS':
+      handleCleanLinkStats(message.data, sendResponse);
+      break;
+
     default:
       sendResponse({ error: 'Unknown message type: ' + message.type });
   }
@@ -480,6 +484,29 @@ async function updateTrackerFrequency(domains) {
   } catch (e) {
     console.error('[隐私护盾] 更新追踪器频次失败:', e);
   }
+}
+
+// ============================================================
+// 链接清理统计
+// ============================================================
+
+async function handleCleanLinkStats(data, sendResponse) {
+  try {
+    const { linkCleanStats } = await chrome.storage.local.get(['linkCleanStats']);
+    const today = new Date().toDateString();
+
+    const stats = linkCleanStats && linkCleanStats.todayDate === today
+      ? linkCleanStats
+      : { todayDate: today, todayCleaned: 0, totalCleaned: (linkCleanStats?.totalCleaned || 0) };
+
+    stats.todayCleaned++;
+    stats.totalCleaned = (stats.totalCleaned || 0) + 1;
+
+    await chrome.storage.local.set({ linkCleanStats: stats });
+  } catch (e) {
+    console.error('[链接清理] 统计保存失败:', e);
+  }
+  sendResponse({ received: true });
 }
 
 // 启动广告拦截

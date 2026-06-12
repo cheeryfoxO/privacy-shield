@@ -45,6 +45,9 @@ async function init() {
 
   // 初始化指纹面板
   await renderFingerprintTab();
+
+  // 初始化链接清理面板
+  await renderLinkCleanerTab(tab);
 }
 
 // ============================================================
@@ -827,4 +830,106 @@ function renderFingerprintItems(results) {
       </div>
     </details>
   `).join('');
+}
+
+// ============================================================
+// 链接清理面板
+// ============================================================
+
+async function renderLinkCleanerTab(tab) {
+  try {
+    const url = tab.url || '';
+    const cleaned = URLCleaner.clean(url);
+    const removed = URLCleaner.getRemovedParams(url);
+    const hasParams = removed.length > 0;
+
+    // 链接对比
+    if (hasParams) {
+      document.getElementById('lcOriginalUrl').innerHTML = highlightTrackingParams(url, removed);
+      document.getElementById('lcCleanedUrl').textContent = cleaned;
+    } else {
+      document.getElementById('lcOriginalUrl').textContent = url;
+      document.getElementById('lcCleanedUrl').textContent = '✅ 此链接无需清理';
+    }
+
+    // 参数列表
+    renderCleanedParams(removed);
+
+    // 统计
+    await renderCleanStats();
+
+    // 绑定事件
+    bindLinkCleanEvents(tab, url);
+  } catch (e) {
+    console.error('[链接清理] 渲染失败:', e);
+  }
+}
+
+function highlightTrackingParams(url, removed) {
+  let html = escapeHtml(url);
+  for (const r of removed) {
+    const escaped = escapeHtml(r.param);
+    const regex = new RegExp(`([?&])(${escaped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}=[^&#]*)`, 'gi');
+    html = html.replace(regex, `$1<span class="tracking-param">$2</span>`);
+  }
+  return html;
+}
+
+function renderCleanedParams(removed) {
+  const container = document.getElementById('lcParamList');
+  if (!container) return;
+
+  if (removed.length === 0) {
+    container.innerHTML = '<p class="empty-hint">✅ 当前页面无追踪参数</p>';
+    return;
+  }
+
+  container.innerHTML = removed.map(r => `
+    <div class="lc-param-item">
+      <span class="lc-param-name">${escapeHtml(r.param)}</span>
+      <span class="lc-param-source">${escapeHtml(r.source)}</span>
+    </div>
+  `).join('');
+}
+
+async function renderCleanStats() {
+  try {
+    const { linkCleanStats } = await chrome.storage.local.get(['linkCleanStats']);
+    const todayCleaned = linkCleanStats && linkCleanStats.todayDate === new Date().toDateString()
+      ? linkCleanStats.todayCleaned : 0;
+    document.getElementById('lcTodayCleaned').textContent = todayCleaned;
+  } catch (e) {
+    document.getElementById('lcTodayCleaned').textContent = '0';
+  }
+}
+
+function bindLinkCleanEvents(tab, originalUrl) {
+  const toggle = document.getElementById('lcAutoCleanToggle');
+  if (toggle) {
+    chrome.storage.sync.get(['linkCleanEnabled'], (result) => {
+      toggle.checked = result.linkCleanEnabled !== false;
+    });
+    toggle.addEventListener('change', () => {
+      chrome.storage.sync.set({ linkCleanEnabled: toggle.checked });
+    });
+  }
+
+  const copyBtn = document.getElementById('lcCopyBtn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      const cleaned = URLCleaner.clean(originalUrl);
+      try {
+        await navigator.clipboard.writeText(cleaned);
+        const hint = document.getElementById('lcCopyHint');
+        if (hint) { hint.style.display = 'block'; setTimeout(() => { hint.style.display = 'none'; }, 2000); }
+      } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = cleaned;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+    });
+  }
 }

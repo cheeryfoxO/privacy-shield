@@ -137,4 +137,89 @@
   });
 
   console.log('[隐私护盾] 初始化完成');
+
+  // ============================================================
+  // 内联 URL 清理（轻量版，避免额外文件加载）
+  // ============================================================
+
+  const TRACKING_PARAMS_SET = new Set([
+    'fbclid','gclid','gclsrc','dclid','msclkid','twclid',
+    '_ga','_gl','gbraid','wbraid','gad_source','gad_medium',
+    'utm_source','utm_medium','utm_campaign','utm_term','utm_content',
+    'utm_id','utm_source_platform','utm_creative_format',
+    'utm_marketing_tactic','utm_audience',
+    'spm','scm','ali_trackid','ali_refid','tracelog','lwfrom',
+    'jd_pop','pps','ptag','_t_t_t',
+    'refer_page_name','refer_page_id','refer_page_sn',
+    'enter_from','previous_page','traffic_source',
+    'zh_forcehybrid','utm_oi',
+    'spm_id_from','from_source','from_spm_id',
+    'sudaref','cate_sudaref',
+    'ref_','pd_rd_','pf_rd_','tag',
+    'utm_name','utm_term',
+    'ref','referrer','source','tracking','trk','trkCampaign',
+    'mc_cid','mc_eid','mc_tc',
+    'hmb_campaign','hmb_medium','hmb_source',
+    'oly_anon_id','oly_enc_id','otc','oicd',
+    'vero_conv','vero_id','yclid','_openstat',
+    'wickedid','wickedcampaign','igshid','si',
+    'nrs_host','nsukey','__nc_form_id','format'
+  ]);
+
+  const PREFIX_PARAMS_LIST = ['ref_', 'pd_rd_', 'pf_rd_', 'psc_'];
+
+  function isURL(text) {
+    return /^https?:\/\/\S+/i.test(text.trim());
+  }
+
+  function cleanURLInPlace(url) {
+    if (!url) return url;
+    try {
+      const u = new URL(url);
+      const sp = new URLSearchParams(u.search);
+      const toRemove = [];
+      for (const [key] of sp) {
+        const lk = key.toLowerCase();
+        if (TRACKING_PARAMS_SET.has(lk) || PREFIX_PARAMS_LIST.some(p => lk.startsWith(p))) {
+          toRemove.push(key);
+        }
+      }
+      for (const k of toRemove) sp.delete(k);
+      const cleanSearch = sp.toString();
+      let result = u.origin + u.pathname;
+      if (cleanSearch) result += '?' + cleanSearch;
+      if (u.hash) result += u.hash;
+      return result;
+    } catch (e) { return url; }
+  }
+
+  // ============================================================
+  // URL 追踪参数自动清理（复制拦截）
+  // ============================================================
+  let linkCleanEnabled = true;
+
+  chrome.storage.sync.get(['linkCleanEnabled'], (result) => {
+    if (result.linkCleanEnabled !== undefined) {
+      linkCleanEnabled = result.linkCleanEnabled;
+    }
+  });
+
+  document.addEventListener('copy', (e) => {
+    if (!linkCleanEnabled) return;
+
+    const selection = window.getSelection().toString().trim();
+    if (!selection || !isURL(selection)) return;
+
+    const cleaned = cleanURLInPlace(selection);
+    if (cleaned === selection) return;
+
+    e.preventDefault();
+    e.clipboardData.setData('text/plain', cleaned);
+
+    chrome.runtime.sendMessage({
+      type: 'CLEAN_LINK_STATS',
+      data: { domain: window.location.hostname, cleaned }
+    }).catch(() => {});
+  });
+
 })();
