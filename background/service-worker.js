@@ -160,6 +160,9 @@ async function handlePrivacyReport(data, sender) {
 
   // 持久化到 storage
   await StorageManager.saveReport(tabId, report);
+
+  // 记录跨站点历史
+  await recordHistory(report);
 }
 
 // ============================================================
@@ -418,6 +421,72 @@ async function handleAdWhitelist(action, domain, sendResponse) {
   } else if (action === 'remove') {
     const list = await AdRulesEngine.removeFromWhitelist(domain);
     sendResponse({ success: true, whitelist: list });
+  }
+}
+
+// ============================================================
+// 跨站点历史记录
+// ============================================================
+
+async function recordHistory(report) {
+  try {
+    const { history = [] } = await chrome.storage.local.get(['history']);
+
+    history.push({
+      domain: report.domain,
+      score: report.overallScore,
+      timestamp: report.timestamp,
+      thirdPartyCount: (report.thirdPartyDomains || []).length,
+      trackerCount: (report.thirdPartyDomains || []).filter(d => d.knownTracker).length,
+      cookieCount: (report.cookies || []).length,
+      cookieTrackingCount: (report.cookies || []).filter(c => c.category === 'tracking').length
+    });
+
+    // 清理 7 天前的记录
+    const cutoff = Date.now() - 7 * 24 * 3600 * 1000;
+    const trimmed = history.filter(h => h.timestamp > cutoff);
+
+    // 上限 500 条
+    if (trimmed.length > 500) {
+      trimmed.splice(0, trimmed.length - 500);
+    }
+
+    await chrome.storage.local.set({ history: trimmed });
+
+    // 更新追踪器频次
+    await updateTrackerFrequency(report.thirdPartyDomains || []);
+  } catch (e) {
+    console.error('[隐私护盾] 记录历史失败:', e);
+  }
+}
+
+async function updateTrackerFrequency(domains) {
+  try {
+    const { trackerFrequency = {} } = await chrome.storage.local.get(['trackerFrequency']);
+
+    for (const d of domains) {
+      if (!d.knownTracker) continue;
+      const key = d.domain;
+      if (!trackerFrequency[key]) {
+        trackerFrequency[key] = { count: 0, category: d.knownTracker.category || '追踪' };
+      }
+      trackerFrequency[key].count++;
+    }
+
+    // 每 24 小时衰减一次追踪器计数
+    const { trackerLastReset } = await chrome.storage.local.get(['trackerLastReset']);
+    const now = Date.now();
+    if (!trackerLastReset || (now - trackerLastReset) > 24 * 3600 * 1000) {
+      for (const key of Object.keys(trackerFrequency)) {
+        trackerFrequency[key].count = Math.floor(trackerFrequency[key].count * 0.7);
+        if (trackerFrequency[key].count <= 0) delete trackerFrequency[key];
+      }
+      await chrome.storage.local.set({ trackerLastReset: now });
+    }
+
+    await chrome.storage.local.set({ trackerFrequency });
+  } catch (e) {
+    console.error('[隐私护盾] 更新追踪器频次失败:', e);
   }
 }
 

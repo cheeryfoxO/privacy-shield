@@ -18,6 +18,7 @@
   <nav class="tab-nav">
     <button class="tab-btn active" data-tab="privacy">📊 隐私评分</button>
     <button class="tab-btn" data-tab="adblock">🛑 广告拦截</button>
+    <button class="tab-btn" data-tab="trends">📈 趋势</button>
   </nav>
 
   <!-- ====== 隐私评分面板 ====== -->
@@ -165,6 +166,49 @@
     </section>
   </div>
   <!-- ====== 广告拦截面板 END ====== -->
+
+  <!-- ====== 趋势面板 ====== -->
+  <div class="tab-panel" id="tab-trends">
+
+    <!-- 统计卡片行 -->
+    <section class="trend-stats">
+      <div class="trend-stat-card">
+        <span class="trend-stat-value" id="trendAvgScore">--</span>
+        <span class="trend-stat-label">7天平均分</span>
+      </div>
+      <div class="trend-stat-card">
+        <span class="trend-stat-value" id="trendSiteCount">--</span>
+        <span class="trend-stat-label">访问站点</span>
+      </div>
+      <div class="trend-stat-card">
+        <span class="trend-stat-value" id="trendTrackerTotal">--</span>
+        <span class="trend-stat-label">拦截追踪器</span>
+      </div>
+    </section>
+
+    <!-- SVG 折线图 -->
+    <section class="trend-chart-section">
+      <h3 class="trend-section-title">7天隐私趋势</h3>
+      <div class="trend-chart-container" id="trendChartContainer">
+        <svg class="trend-chart" id="trendChartSvg" viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </section>
+
+    <!-- 追踪器排行榜 -->
+    <section class="trend-ranking-section">
+      <h3 class="trend-section-title">🔝 最常见追踪器</h3>
+      <div class="trend-ranking-list" id="trendRankingList">
+        <p class="empty-hint">暂无追踪器数据</p>
+      </div>
+    </section>
+
+    <!-- 底部提示 -->
+    <section class="trend-footer">
+      <span class="trend-footer-text">仅保留最近 7 天数据</span>
+    </section>
+
+  </div>
+  <!-- ====== 趋势面板 END ====== -->
 
   <!-- 加载/错误遮罩 -->
   <div class="overlay" id="overlay" style="display: none;">

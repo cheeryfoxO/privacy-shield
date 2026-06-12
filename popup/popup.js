@@ -39,6 +39,9 @@ async function init() {
 
   // 初始化广告拦截面板
   await initAdBlockPanel(tab.id);
+
+  // 初始化趋势面板
+  await renderHistoryTab();
 }
 
 // ============================================================
@@ -626,4 +629,173 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+// ============================================================
+// 趋势面板
+// ============================================================
+
+async function renderHistoryTab() {
+  try {
+    const { history = [], trackerFrequency = {} } =
+      await chrome.storage.local.get(['history', 'trackerFrequency']);
+
+    renderTrendStats(history, trackerFrequency);
+    renderTrendChart(history);
+    renderTrendRanking(trackerFrequency);
+  } catch (e) {
+    console.error('[趋势面板] 渲染失败:', e);
+    document.getElementById('trendAvgScore').textContent = '--';
+    document.getElementById('trendSiteCount').textContent = '--';
+    document.getElementById('trendTrackerTotal').textContent = '--';
+  }
+}
+
+// ---- 统计卡片 ----
+
+function renderTrendStats(history, trackerFrequency) {
+  // 平均分
+  if (history.length > 0) {
+    const avgScore = Math.round(history.reduce((s, h) => s + h.score, 0) / history.length);
+    const avgEl = document.getElementById('trendAvgScore');
+    avgEl.textContent = avgScore;
+    if (avgScore < 50) avgEl.classList.add('low');
+    else avgEl.classList.remove('low');
+  }
+
+  // 访问站点数
+  const siteCount = new Set(history.map(h => h.domain)).size;
+  document.getElementById('trendSiteCount').textContent = siteCount;
+
+  // 拦截追踪器总计
+  const totalTrackers = Object.values(trackerFrequency).reduce((s, t) => s + t.count, 0);
+  document.getElementById('trendTrackerTotal').textContent = totalTrackers;
+}
+
+// ---- SVG 折线图 ----
+
+function renderTrendChart(history) {
+  const svg = document.getElementById('trendChartSvg');
+  if (!svg) return;
+
+  // 生成最近 7 天的日期列表
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push({
+      dateStr: d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
+      isoDate: d.toLocaleDateString('zh-CN')
+    });
+  }
+
+  // 按日期分组求日均分
+  const dailyScores = new Map();
+  for (const h of history) {
+    const dateStr = new Date(h.timestamp).toLocaleDateString('zh-CN');
+    if (!dailyScores.has(dateStr)) {
+      dailyScores.set(dateStr, { total: 0, count: 0 });
+    }
+    const entry = dailyScores.get(dateStr);
+    entry.total += h.score;
+    entry.count++;
+  }
+
+  // 构建数据点
+  const points = days.map(d => {
+    const entry = dailyScores.get(d.isoDate);
+    if (entry && entry.count > 0) {
+      return {
+        ...d,
+        hasData: true,
+        avgScore: Math.round(entry.total / entry.count),
+        count: entry.count
+      };
+    }
+    return { ...d, hasData: false, avgScore: null, count: 0 };
+  });
+
+  // SVG 参数
+  const padLeft = 32, padRight = 16, padTop = 10, padBottom = 24;
+  const width = 300, height = 160;
+  const plotLeft = padLeft, plotRight = width - padRight;
+  const plotTop = padTop, plotBottom = height - padBottom;
+
+  let html = '';
+
+  // 渐变定义
+  html += '<defs><linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3b82f6" stop-opacity="0.25"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/></linearGradient></defs>';
+
+  // 网格线 (Y: 0, 25, 50, 75, 100)
+  const yValues = [0, 25, 50, 75, 100];
+  for (const yVal of yValues) {
+    const y = plotBottom - (yVal / 100) * (plotBottom - plotTop);
+    html += `<line class="grid-line" x1="${plotLeft}" y1="${y}" x2="${plotRight}" y2="${y}"/>`;
+    html += `<text class="y-label" x="${plotLeft - 4}" y="${y + 3}" text-anchor="end">${yVal}</text>`;
+  }
+
+  // X 轴 + 标签
+  const xGap = (plotRight - plotLeft) / 6;
+  for (let i = 0; i < points.length; i++) {
+    const x = plotLeft + i * xGap;
+    const cls = points[i].hasData ? 'x-label' : 'x-label empty';
+    html += `<text class="${cls}" x="${x}" y="${height - 4}">${points[i].dateStr}</text>`;
+  }
+
+  // 收集有数据的点坐标
+  const dataPoints = [];
+  for (let i = 0; i < points.length; i++) {
+    if (points[i].hasData) {
+      const x = plotLeft + i * xGap;
+      const y = plotBottom - (points[i].avgScore / 100) * (plotBottom - plotTop);
+      dataPoints.push({ x, y, ...points[i] });
+    }
+  }
+
+  // 渐变填充区域
+  if (dataPoints.length >= 1) {
+    let fillPath = `M ${dataPoints[0].x} ${plotBottom}`;
+    for (const pt of dataPoints) {
+      fillPath += ` L ${pt.x} ${pt.y}`;
+    }
+    fillPath += ` L ${dataPoints[dataPoints.length - 1].x} ${plotBottom} Z`;
+    html += `<path class="trend-fill" d="${fillPath}"/>`;
+  }
+
+  // 折线
+  if (dataPoints.length >= 1) {
+    html += `<polyline class="trend-line" points="${dataPoints.map(pt => `${pt.x},${pt.y}`).join(' ')}"/>`;
+  }
+
+  // 数据点
+  for (const pt of dataPoints) {
+    html += `<circle class="trend-dot" cx="${pt.x}" cy="${pt.y}" r="3.5"><title>${pt.dateStr} · ${pt.count}个站点 · 均分${pt.avgScore}</title></circle>`;
+  }
+
+  svg.innerHTML = html;
+}
+
+// ---- 追踪器排行榜 ----
+
+function renderTrendRanking(trackerFrequency) {
+  const listEl = document.getElementById('trendRankingList');
+  if (!listEl) return;
+
+  const entries = Object.entries(trackerFrequency)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 8);
+
+  if (entries.length === 0) {
+    listEl.innerHTML = '<p class="empty-hint">暂无追踪器数据</p>';
+    return;
+  }
+
+  listEl.innerHTML = entries.map(([domain, info], i) => `
+    <div class="trend-ranking-item">
+      <span class="trend-ranking-rank">${i + 1}.</span>
+      <span class="trend-ranking-domain">${escapeHtml(domain)}</span>
+      <span class="trend-ranking-cat">${escapeHtml(info.category || '追踪')}</span>
+      <span class="trend-ranking-count">${info.count}次</span>
+    </div>
+  `).join('');
 }

@@ -716,3 +716,176 @@ body::-webkit-scrollbar-thumb {
 .btn-ghost:hover {
   background: var(--bg-hover);
 }
+
+/* ============================================================
+   趋势面板
+   ============================================================ */
+
+/* 统计卡片行 */
+.trend-stats {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+.trend-stat-card {
+  flex: 1;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.trend-stat-value {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  color: #3b82f6;
+  line-height: 1.2;
+}
+
+.trend-stat-value.low {
+  color: var(--color-red);
+}
+
+.trend-stat-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* 图表区域 */
+.trend-chart-section {
+  padding: 0 16px 8px;
+}
+
+.trend-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+
+.trend-chart-container {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}
+
+.trend-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 网格线 */
+.trend-chart .grid-line {
+  stroke: var(--border-color);
+  stroke-dasharray: 4, 4;
+  stroke-width: 0.5;
+}
+
+/* Y 轴标签 */
+.trend-chart .y-label {
+  font-size: 10px;
+  fill: var(--text-muted);
+}
+
+/* X 轴标签 */
+.trend-chart .x-label {
+  font-size: 9px;
+  fill: var(--text-muted);
+  text-anchor: middle;
+}
+
+.trend-chart .x-label.empty {
+  fill: var(--text-muted);
+  opacity: 0.4;
+}
+
+/* 折线 */
+.trend-chart .trend-line {
+  fill: none;
+  stroke: #3b82f6;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 渐变填充 */
+.trend-chart .trend-fill {
+  fill: url(#trendGradient);
+}
+
+/* 数据点 */
+.trend-chart .trend-dot {
+  fill: #3b82f6;
+  stroke: var(--bg-primary);
+  stroke-width: 2;
+}
+
+/* 排行榜 */
+.trend-ranking-section {
+  padding: 4px 16px 0;
+}
+
+.trend-ranking-list {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.trend-ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 11px;
+}
+
+.trend-ranking-item:last-child {
+  border-bottom: none;
+}
+
+.trend-ranking-rank {
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 16px;
+  text-align: center;
+}
+
+.trend-ranking-domain {
+  flex: 1;
+  font-family: monospace;
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.trend-ranking-cat {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.trend-ranking-count {
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* 底部提示 */
+.trend-footer {
+  text-align: center;
+  padding: 12px 16px 8px;
+}
+
+.trend-footer-text {
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
