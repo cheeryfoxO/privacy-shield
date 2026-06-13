@@ -31,68 +31,49 @@ async function init() {
     return;
   }
 
-  // 加载并显示报告
-  await loadReport(tab.id);
-
-  // 初始化 Tab 切换
+  // 先显示 UI 框架（Tab 立即可见）
   initTabs();
+  renderReport(null); // 显示空状态，不显示加载遮罩
 
-  // 初始化广告拦截面板
-  await initAdBlockPanel(tab.id);
-
-  // 初始化趋势面板
-  await renderHistoryTab();
-
-  // 初始化指纹面板
-  await renderFingerprintTab();
-
-  // 初始化链接清理面板
-  await renderLinkCleanerTab(tab);
+  // 并行加载所有数据，谁先回来谁先渲染
+  loadReport(tab.id);           // 隐私评分
+  initAdBlockPanel(tab.id);     // 广告拦截
+  renderHistoryTab();           // 趋势
+  renderFingerprintTab();       // 指纹
+  renderLinkCleanerTab(tab);    // 链接清理
 }
 
 // ============================================================
 // 加载报告
 // ============================================================
 async function loadReport(tabId) {
-  showLoading(true, '正在扫描...');
-
   try {
-    const response = await chrome.runtime.sendMessage({
-      type: 'GET_REPORT',
-      tabId: tabId
-    });
+    // 直接从 storage 读取缓存报告（瞬间返回，无 SW 开销）
+    const key = `report:${tabId}`;
+    const result = await chrome.storage.local.get([key]);
+    const cached = result[key];
 
-    if (response && response.report) {
-      currentReport = response.report;
+    if (cached) {
+      currentReport = cached;
       renderReport(currentReport);
-      showLoading(false);
-    } else if (response && response.error) {
-      // Content script 无法通信（可能需要手动触发扫描）
-      showLoading(true, '正在等待页面数据...');
-      // 尝试重新请求
-      setTimeout(async () => {
-        try {
-          await chrome.tabs.sendMessage(tabId, { type: 'REQUEST_REPORT' });
-        } catch (e) {}
-        setTimeout(async () => {
-          const retryResponse = await chrome.runtime.sendMessage({
-            type: 'GET_REPORT',
-            tabId: tabId
-          });
-          if (retryResponse && retryResponse.report) {
-            currentReport = retryResponse.report;
-            renderReport(currentReport);
-          } else {
-            showLoading(true, '无法获取数据，请刷新页面后重试');
-          }
-        }, 1500);
-      }, 500);
-    } else {
-      showLoading(true, '报告暂未生成，请尝试重新扫描');
     }
+
+    // 后台触发刷新（content script 重新扫描）
+    try {
+      await chrome.tabs.sendMessage(tabId, { type: 'REQUEST_REPORT' });
+    } catch (e) {}
+
+    // 等 1s 后读取更新后的报告
+    setTimeout(async () => {
+      const freshResult = await chrome.storage.local.get([key]);
+      const fresh = freshResult[key];
+      if (fresh && (!currentReport || fresh.timestamp > currentReport.timestamp)) {
+        currentReport = fresh;
+        renderReport(currentReport);
+      }
+    }, 1000);
   } catch (e) {
     console.error('[隐私护盾] 加载报告失败:', e);
-    showLoading(true, '加载失败，请刷新页面后重试');
   }
 }
 
@@ -100,7 +81,13 @@ async function loadReport(tabId) {
 // 渲染完整报告
 // ============================================================
 function renderReport(report) {
-  if (!report) return;
+  if (!report) {
+    // 无缓存数据时显示占位
+    document.getElementById('scoreNumber').textContent = '--';
+    document.getElementById('scoreLabel').textContent = '加载中';
+    document.getElementById('summaryText').textContent = '正在获取隐私报告...';
+    return;
+  }
 
   // 渲染分数
   renderScore(report.overallScore, report.scoreBreakdown);
