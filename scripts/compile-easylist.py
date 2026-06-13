@@ -31,7 +31,7 @@ RESOURCE_TYPE_MAP = {
     "ping": "ping",
     "beacon": "ping",
     "websocket": "websocket",
-    "webrtc": "webrtc",
+    "webrtc": "other",
     "font": "font",
     "media": "media",
     "other": "other",

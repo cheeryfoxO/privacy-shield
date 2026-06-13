@@ -139,6 +139,53 @@
   console.log('[隐私护盾] 初始化完成');
 
   // ============================================================
+  // Canvas 指纹采集（注入页面 JS 世界，利用真实 GPU 渲染）
+  // ============================================================
+  const canvasFingerprintScript = document.createElement('script');
+  canvasFingerprintScript.textContent = '(' + function() {
+    function crc32(str) {
+      var table = [];
+      for (var i = 0; i < 256; i++) {
+        var c = i;
+        for (var j = 0; j < 8; j++) {
+          c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        }
+        table[i] = c;
+      }
+      var crc = 0xFFFFFFFF;
+      for (var i = 0; i < str.length; i++) {
+        crc = (crc >>> 8) ^ table[(crc ^ str.charCodeAt(i)) & 0xFF];
+      }
+      return ((crc ^ 0xFFFFFFFF) >>> 0).toString(16);
+    }
+
+    var canvas = document.createElement('canvas');
+    canvas.width = 280;
+    canvas.height = 60;
+    var ctx = canvas.getContext('2d');
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial';
+    ctx.fillStyle = '#f60';
+    ctx.fillRect(125, 1, 62, 20);
+    ctx.fillStyle = '#069';
+    ctx.fillText('PrivacyShield <canvas> fp', 2, 15);
+    ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+    ctx.fillText('PrivacyShield <canvas> fp', 4, 17);
+
+    var hash = crc32(canvas.toDataURL());
+    window.postMessage({ type: 'CANVAS_FP', hash: hash }, '*');
+  }.toString() + ')();';
+  (document.head || document.documentElement).appendChild(canvasFingerprintScript);
+  canvasFingerprintScript.remove();
+
+  // 接收页面世界的 Canvas 指纹
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'CANVAS_FP' && e.data.hash) {
+      chrome.storage.local.set({ 'canvasFingerprint:self': e.data.hash }).catch(function() {});
+    }
+  });
+
+  // ============================================================
   // 内联 URL 清理（轻量版，避免额外文件加载）
   // ============================================================
 
